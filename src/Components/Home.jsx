@@ -4,7 +4,7 @@ import axios from 'axios';
 const Home = () => {
     const handleClick=()=>{
         // axios.get('https://admin.server.ddks.live')
-        window.location.href="https://admin.server.ddks.live"
+        window.location.href="https://admin.server.ddks.live/auth/github"
     }
 
     return (

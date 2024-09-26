@@ -5,7 +5,7 @@ import Repo from "./Components/Repo"
 const routes=[
     { path: '/', element: <Home/> },
     { path: '/Repo', element: <Repo/> },
-    { path: '/Details', element: <Details/> },
+    { path: '/Deploy', element: <Details/> },
 
 ]
 
