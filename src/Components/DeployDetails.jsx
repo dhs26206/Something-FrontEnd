@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
-import axios from "axios";
-import { useLocation, useNavigate } from "react-router-dom";
-import { VscRocket, VscCode, VscFolder, VscLoading } from "react-icons/vsc";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { VscRocket, VscCode, VscFolder, VscLoading } from 'react-icons/vsc';
 
 export default function Details() {
   const { search } = useLocation();
@@ -10,6 +10,8 @@ export default function Details() {
   const [details, setDetails] = useState({ buildCommand: "", buildDirectory: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [deploymentProgress, setDeploymentProgress] = useState(0);
+  const [showProgress, setShowProgress] = useState(false);
 
   useEffect(() => {
     const func = async () => {
@@ -29,9 +31,40 @@ export default function Details() {
     }));
   }, []);
 
+  const pollDeploymentStatus = useCallback((repoId) => {
+    let progress = 0; // Initialize progress locally, not resetting it each time
+  
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await axios.post(
+          'https://admin.server.ddks.live/auth/status',
+          { Id: repoId },
+          { withCredentials: true }
+        );
+        
+        progress = response.data.Status;
+        setDeploymentProgress(progress);
+  
+        // Stop polling if progress reaches 600
+        if (progress >= 600) {
+          clearInterval(intervalId);
+          setShowProgress(false);
+          // Optionally, handle success logic here
+        }
+      } catch (error) {
+        console.error('Error polling deployment status:', error);
+        setError('Failed to get deployment status. Please check manually.');
+        clearInterval(intervalId); // Stop polling on error
+        setShowProgress(false);
+      }
+    }, 1000); // Poll every 1 second
+  }, []);
+  
   const handleFinalDeploy = async () => {
     setIsLoading(true);
     setError(null);
+    setShowProgress(true);
+    setDeploymentProgress(0);
     try {
       const data = JSON.stringify(details);
       const res = await axios.post(
@@ -44,14 +77,30 @@ export default function Details() {
           withCredentials: true,
         }
       );
-      console.log('Response:', res.data);
-      // You might want to navigate to a success page or show a success message here
+      console.log('Response:',res.data.repoId);
+      pollDeploymentStatus(res.data.repoId); // Start polling for status
     } catch (error) {
       console.error('Error during deployment:', error);
       setError('Deployment failed. Please try again.');
+      setShowProgress(false);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getProgressStage = (progress) => {
+    console.log(progress);
+    if (progress === 100) return "Initializing";
+    if (progress === 200) return "Cloning Repository";
+    if (progress === 300) return "Installing Dependencies";
+    if (progress === 400) return "Building Project";
+    if (progress === 500) return "Optimizing Assets";
+    if (progress === 600) return "Deployment Complete";
+    return "Waiting to Start";
+  };
+
+  const getProgressPercentage = (progress) => {
+    return (progress / 600) * 100;
   };
 
   return (
@@ -110,10 +159,31 @@ export default function Details() {
               {error}
             </div>
           )}
+          {showProgress && (
+            <div className="mt-8 space-y-4">
+              <div className="w-full bg-gray-700 rounded-full h-2.5">
+                <div 
+                  className="bg-emerald-600 h-2.5 rounded-full transition-all duration-500 ease-out" 
+                  style={{ width: `${getProgressPercentage(deploymentProgress)}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between">
+                {[100, 200, 300, 400, 500, 600].map((stage) => (
+                  <div 
+                    key={stage} 
+                    className={`w-4 h-4 rounded-full ${deploymentProgress >= stage ? 'bg-emerald-600' : 'bg-gray-600'}`}
+                  ></div>
+                ))}
+              </div>
+              <p className="text-center text-emerald-400 font-semibold">
+                {()=>getProgressStage(deploymentProgress)}
+              </p>
+            </div>
+          )}
           <div className="mt-8 flex justify-center">
             <button
               onClick={handleFinalDeploy}
-              disabled={isLoading}
+              disabled={isLoading || showProgress}
               className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {isLoading ? (
@@ -129,6 +199,16 @@ export default function Details() {
               )}
             </button>
           </div>
+          {deploymentProgress === 600 && (
+            <>
+            <div className="mt-4 text-green-400 text-center">
+              Deployment Successful <span id='Green Tick'>✔️</span>
+            </div>
+            <div className='cursor-pointer hover:text-green-500 text-green-200' onClick={() => { window.open(`https://${repoId}.server.ddks.live`, '_blank') }}>
+                See Your Deployment
+             </div>
+            </>
+          )}
         </div>
       </main>
     </div>
