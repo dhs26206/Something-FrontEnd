@@ -2,17 +2,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { VscRocket, VscCode, VscFolder, VscLoading } from 'react-icons/vsc';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 export default function Details() {
   const { search } = useLocation();
   const navigate = useNavigate();
   const [credential, setCredential] = useState({ repo: "", owner: "" });
-  const [details, setDetails] = useState({ buildCommand: "", buildDirectory: "" });
+  const [details, setDetails] = useState({ buildCommand: "", buildDirectory: "" ,deploymentType: 'frontend'});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [deploymentProgress, setDeploymentProgress] = useState(0);
+  const [deploymentProgress, setDeploymentProgress] = useState(100);
   const [showProgress, setShowProgress] = useState(false);
-
+  const  obj= {100:"Waiting for Deployment",200:"Cloning Repository",300:"Installing Dependencies",400:"Building Project",500:"Optimizing Assets",600:"Deployment Complete"}
+  const [subDomain, setSubDomain] = useState('frontend');
+  const [deployedOrNew, setDeployedOrNew] = useState('new');
   useEffect(() => {
     const func = async () => {
       const queryParams = new URLSearchParams(search);
@@ -30,7 +32,9 @@ export default function Details() {
       [name]: value
     }));
   }, []);
-
+  const handleDeploymentTypeChange = (value) => {
+    setDetails({ ...details, deploymentType: value })
+  }
   const pollDeploymentStatus = useCallback((repoId) => {
     let progress = 0; // Initialize progress locally, not resetting it each time
   
@@ -48,6 +52,8 @@ export default function Details() {
         // Stop polling if progress reaches 600
         if (progress >= 600) {
           clearInterval(intervalId);
+          setDeployedOrNew('deployed');
+          setSubDomain(repoId)
           setShowProgress(false);
           // Optionally, handle success logic here
         }
@@ -88,17 +94,6 @@ export default function Details() {
     }
   };
 
-  const getProgressStage = (progress) => {
-    console.log(progress);
-    if (progress === 100) return "Initializing";
-    if (progress === 200) return "Cloning Repository";
-    if (progress === 300) return "Installing Dependencies";
-    if (progress === 400) return "Building Project";
-    if (progress === 500) return "Optimizing Assets";
-    if (progress === 600) return "Deployment Complete";
-    return "Waiting to Start";
-  };
-
   const getProgressPercentage = (progress) => {
     return (progress / 600) * 100;
   };
@@ -120,8 +115,22 @@ export default function Details() {
           <h2 className="text-2xl font-bold mb-6 text-center text-emerald-400">Configure Your Deployment</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
+              <label htmlFor="deploymentType" className="block text-sm font-medium text-gray-300">
+                Deployment Type
+              </label>
+              <Select onValueChange={handleDeploymentTypeChange} defaultValue={details.deploymentType}>
+                <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-gray-200">
+                  <SelectValue placeholder="Select deployment type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="frontend">Frontend</SelectItem>
+                  <SelectItem value="backend">Backend</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <label htmlFor="buildCommand" className="block text-sm font-medium text-gray-300">
-                Build Command
+                {details.deploymentType === 'backend' ? 'Start Script' : 'Build Command'}
               </label>
               <div className="relative">
                 <VscCode className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -129,31 +138,42 @@ export default function Details() {
                   id="buildCommand"
                   name="buildCommand"
                   type="text"
-                  placeholder="npm run build"
+                  placeholder={details.deploymentType === 'backend' ? 'npm start' : 'npm run build'}
                   value={details.buildCommand}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="buildDirectory" className="block text-sm font-medium text-gray-300">
-                Build Directory
-              </label>
-              <div className="relative">
-                <VscFolder className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  id="buildDirectory"
-                  name="buildDirectory"
-                  type="text"
-                  placeholder="build"
-                  value={details.buildDirectory}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                />
+            {details.deploymentType === 'frontend' && (
+              <div className="space-y-2">
+                <label htmlFor="buildDirectory" className="block text-sm font-medium text-gray-300">
+                  Build Directory
+                </label>
+                <div className="relative">
+                  <VscCode className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    id="buildDirectory"
+                    name="buildDirectory"
+                    type="text"
+                    placeholder="build"
+                    value={details.buildDirectory}
+                    onChange={handleInputChange}
+                    className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  />
+                </div>
               </div>
-            </div>
+            )}
+            
           </div>
+          {details.deploymentType === 'backend' && (
+              //Instruction to specify port number as process.env.PORT
+              <div className='mt-4 w-full bg-[#7b11117a] py-4 px-2  border-2 border-red-200 rounded-xl'>
+                <div>
+                  Note : To Run Your Node Backend Application, Make Sure to Use <span onClick={() => window.open("https://developerport.medium.com/understanding-process-env-port-in-node-js-e09aef80384c", "_blank")}className='text-emerald-400 cursor-pointer'>process.env.PORT</span> as the Port Number in Your Application. Else, Your Application Will Not Run.
+                </div>
+              </div>
+            )}
           {error && (
             <div className="mt-4 text-red-400 text-center">
               {error}
@@ -176,7 +196,7 @@ export default function Details() {
                 ))}
               </div>
               <p className="text-center text-emerald-400 font-semibold">
-                {()=>getProgressStage(deploymentProgress)}
+                {obj[deploymentProgress]}
               </p>
             </div>
           )}
@@ -184,7 +204,7 @@ export default function Details() {
             <button
               onClick={handleFinalDeploy}
               disabled={isLoading || showProgress}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className={`${deployedOrNew === 'new' ? '' : 'cursor-not-allowed hidden'} px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center`}
             >
               {isLoading ? (
                 <>
@@ -199,18 +219,16 @@ export default function Details() {
               )}
             </button>
           </div>
-          {deploymentProgress === 600 && (
-            <>
+          <div key={deploymentProgress} className={`${deploymentProgress === 600 ? '' : 'hidden'}`}>
             <div className="mt-4 text-green-400 text-center">
               Deployment Successful <span id='Green Tick'>✔️</span>
             </div>
-            <div className='cursor-pointer hover:text-green-500 text-green-200' onClick={() => { window.open(`https://${repoId}.server.ddks.live`, '_blank') }}>
-                See Your Deployment
-             </div>
-            </>
-          )}
+            <div className='cursor-pointer hover:text-green-500 text-green-200 text-center'>
+              <a href={`https://${subDomain}.server.ddks.live`}>See Deployment</a>
+            </div>
+          </div>
         </div>
       </main>
     </div>
-  );
+  )
 }
