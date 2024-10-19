@@ -56,12 +56,11 @@ export default function Component() {
               <div
                 key={index}
                 onClick={() => handleDeploy(repo.repo, repo.owner)}
-                className="bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer transition-all duration-300 hover:bg-gray-700 hover:shadow-lg hover:-translate-y-1"
-              >
+                className="bg-gray-800 border border-gray-700 rounded-lg p-4 cursor-pointer transition-all duration-300 hover:bg-gray-700 hover:shadow-lg hover:-translate-y-1">
                 <h2 className="text-xl font-semibold mb-2 text-emerald-400">{repo.name}</h2>
                 <p className="text-sm text-gray-400 mb-4">Owner: {repo.owner}</p>
-                <button className="w-full bg-emerald-600 text-white py-2 px-4 rounded flex items-center justify-center hover:bg-emerald-500 transition-colors">
-                  <VscRocket className="mr-2" /> Deploy
+                <button className={`w-full ${repo.deployed=='yes'?'text-emerald-600 border-2 border-emerald-600':'bg-emerald-600'}  text-white py-2 px-4 rounded flex items-center justify-center hover:bg-emerald-500 transition-colors`}>
+                  <VscRocket className="mr-2" /> {repo.deployed=='yes'?'ReDeploy':'Deploy'}
                 </button>
               </div>
             ))}

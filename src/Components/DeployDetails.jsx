@@ -104,7 +104,7 @@ export default function Details() {
         <div className="container mx-auto flex items-center justify-between px-4">
           <div className="flex items-center space-x-2">
             <VscRocket className="text-3xl text-emerald-400" />
-            <span className="text-2xl font-bold text-emerald-400">DeployHub</span>
+            <span className="text-2xl font-bold text-emerald-400">Dipola</span>
           </div>
           <h1 className="text-xl font-semibold">Deployment Details</h1>
         </div>
