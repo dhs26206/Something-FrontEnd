@@ -102,9 +102,8 @@ export default function Component() {
                 <div key={repo._id} className="flex-shrink-0 w-64 bg-gray-800 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-2">{repo.repoName}</h3>
                   <a
-                    href={`https://${repo.uniqueId}.server.ddks.live`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`https://frontend.server.ddks.live/expand/${repo.uniqueId}`}
+                    
                     className="bg-emerald-500 text-gray-900 px-4 py-2 rounded-md font-bold text-sm inline-block hover:bg-emerald-400 transition-colors"
                   >
                     View
